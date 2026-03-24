@@ -107,4 +107,10 @@ extension View {
     func lensHeroCardStyle() -> some View {
         modifier(LensHeroCardModifier())
     }
+
+    func lensNavigationChrome() -> some View {
+        toolbarBackground(.visible, for: .navigationBar)
+            .toolbarBackground(Color.white.opacity(0.82), for: .navigationBar)
+            .toolbarColorScheme(.light, for: .navigationBar)
+    }
 }

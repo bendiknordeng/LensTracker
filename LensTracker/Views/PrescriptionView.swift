@@ -6,7 +6,9 @@ struct PrescriptionView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
+            ZStack {
+                LensScreenBackground()
+
                 if viewModel.allPrescriptions().isEmpty {
                     ContentUnavailableView(
                         "No Prescriptions",
@@ -21,18 +23,22 @@ struct PrescriptionView: View {
                             } label: {
                                 PrescriptionRow(prescription: rx)
                             }
-                        }
-                        .onDelete { offsets in
-                            let prescriptions = viewModel.allPrescriptions()
-                            for i in offsets {
-                                viewModel.deletePrescription(prescriptions[i])
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    viewModel.deletePrescription(rx)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
                             }
                         }
                     }
+                    .scrollContentBackground(.hidden)
+                    .listStyle(.plain)
                 }
             }
             .navigationTitle("Prescriptions")
             .navigationBarTitleDisplayMode(.inline)
+            .lensNavigationChrome()
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
@@ -43,7 +49,7 @@ struct PrescriptionView: View {
                 }
             }
             .sheet(isPresented: $showAddSheet) {
-                AddPrescriptionSheet()
+                PrescriptionEditorSheet()
             }
         }
     }
@@ -53,33 +59,71 @@ private struct PrescriptionRow: View {
     let prescription: Prescription
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text("Contact Lens Prescription")
-                    .font(.headline)
-                Spacer()
-            }
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Contact Lens Prescription")
+                .font(.headline)
+                .foregroundStyle(LensPalette.ink)
+
             if let doctor = prescription.doctorName, !doctor.isEmpty {
                 Text("Dr. \(doctor)")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(LensPalette.slate)
             }
-            HStack(spacing: 12) {
-                Text("OD: \(Prescription.formatSphere(prescription.odSphere))")
-                Text("OS: \(Prescription.formatSphere(prescription.osSphere))")
+
+            HStack(spacing: 10) {
+                RxValueBadge(label: "OD", value: Prescription.formatSphere(prescription.odSphere))
+                RxValueBadge(label: "OS", value: Prescription.formatSphere(prescription.osSphere))
             }
-            .font(.caption)
-            .foregroundStyle(.secondary)
+
+            if let clinic = prescription.clinicName, !clinic.isEmpty {
+                Text(clinic)
+                    .font(.caption)
+                    .foregroundStyle(LensPalette.slate)
+            }
         }
-        .padding(.vertical, 4)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white.opacity(0.58))
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(.white.opacity(0.75))
+                .frame(height: 1)
+                .padding(.horizontal, 20)
+        }
+        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+        .listRowBackground(Color.clear)
     }
 }
 
-// MARK: - Add Prescription Sheet
+private struct RxValueBadge: View {
+    let label: String
+    let value: String
 
-private struct AddPrescriptionSheet: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label)
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(LensPalette.slate)
+            Text(value)
+                .font(.subheadline.monospacedDigit().weight(.semibold))
+                .foregroundStyle(LensPalette.teal)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(.white.opacity(0.6))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+}
+
+// MARK: - Prescription Editor
+
+struct PrescriptionEditorSheet: View {
     @Environment(LensViewModel.self) private var viewModel
     @Environment(\.dismiss) private var dismiss
+
+    private let prescription: Prescription?
+    private let title: String
 
     @State private var doctorName = ""
     @State private var clinicName = ""
@@ -103,54 +147,92 @@ private struct AddPrescriptionSheet: View {
     @State private var osAdd = ""
     @State private var osBrand = ""
 
+    init(prescription: Prescription? = nil, title: String = "Add Prescription") {
+        self.prescription = prescription
+        self.title = title
+
+        _doctorName = State(initialValue: prescription?.doctorName ?? "")
+        _clinicName = State(initialValue: prescription?.clinicName ?? "")
+        _notes = State(initialValue: prescription?.notes ?? "")
+
+        _odSphere = State(initialValue: PrescriptionEditorSheet.stringValue(prescription?.odSphere, defaultValue: "+0.00", format: "%+.2f"))
+        _odCylinder = State(initialValue: PrescriptionEditorSheet.stringValue(prescription?.odCylinder, defaultValue: "+0.00", format: "%+.2f"))
+        _odAxis = State(initialValue: prescription?.odAxis.map(String.init) ?? "90")
+        _odBC = State(initialValue: PrescriptionEditorSheet.stringValue(prescription?.odBaseCurve))
+        _odDIA = State(initialValue: PrescriptionEditorSheet.stringValue(prescription?.odDiameter))
+        _odAdd = State(initialValue: PrescriptionEditorSheet.stringValue(prescription?.odAdd, format: "+%.2f"))
+        _odBrand = State(initialValue: prescription?.odBrand ?? "")
+
+        _osSphere = State(initialValue: PrescriptionEditorSheet.stringValue(prescription?.osSphere, defaultValue: "+0.00", format: "%+.2f"))
+        _osCylinder = State(initialValue: PrescriptionEditorSheet.stringValue(prescription?.osCylinder, defaultValue: "+0.00", format: "%+.2f"))
+        _osAxis = State(initialValue: prescription?.osAxis.map(String.init) ?? "90")
+        _osBC = State(initialValue: PrescriptionEditorSheet.stringValue(prescription?.osBaseCurve))
+        _osDIA = State(initialValue: PrescriptionEditorSheet.stringValue(prescription?.osDiameter))
+        _osAdd = State(initialValue: PrescriptionEditorSheet.stringValue(prescription?.osAdd, format: "+%.2f"))
+        _osBrand = State(initialValue: prescription?.osBrand ?? "")
+    }
+
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Doctor") {
-                    TextField("Doctor name", text: $doctorName)
-                    TextField("Clinic name", text: $clinicName)
-                }
+            ZStack {
+                LensScreenBackground()
 
-                Section("Right Eye (OD)") {
-                    EyeFields(
-                        sphere: $odSphere, cylinder: $odCylinder, axis: $odAxis,
-                        bc: $odBC, dia: $odDIA, add: $odAdd, brand: $odBrand
-                    )
-                }
-
-                Section("Left Eye (OS)") {
-                    EyeFields(
-                        sphere: $osSphere, cylinder: $osCylinder, axis: $osAxis,
-                        bc: $osBC, dia: $osDIA, add: $osAdd, brand: $osBrand
-                    )
-                }
-
-                Section("Notes") {
-                    TextField("Additional notes", text: $notes, axis: .vertical)
-                        .lineLimit(3...6)
-                }
-
-                Section {
-                    Button("Save Prescription") {
-                        save()
-                        dismiss()
+                Form {
+                    Section("Doctor") {
+                        TextField("Doctor name", text: $doctorName)
+                        TextField("Clinic name", text: $clinicName)
                     }
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
+                    .listRowBackground(Color.white.opacity(0.74))
+
+                    Section("Right Eye (OD)") {
+                        EyeFields(
+                            sphere: $odSphere, cylinder: $odCylinder, axis: $odAxis,
+                            bc: $odBC, dia: $odDIA, add: $odAdd, brand: $odBrand
+                        )
+                    }
+                    .listRowBackground(Color.white.opacity(0.74))
+
+                    Section("Left Eye (OS)") {
+                        EyeFields(
+                            sphere: $osSphere, cylinder: $osCylinder, axis: $osAxis,
+                            bc: $osBC, dia: $osDIA, add: $osAdd, brand: $osBrand
+                        )
+                    }
+                    .listRowBackground(Color.white.opacity(0.74))
+
+                    Section("Notes") {
+                        TextField("Additional notes", text: $notes, axis: .vertical)
+                            .lineLimit(3...6)
+                    }
+                    .listRowBackground(Color.white.opacity(0.74))
+
+                    Section {
+                        Button("Save Prescription") {
+                            save()
+                            dismiss()
+                        }
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                    }
+                    .listRowBackground(Color.white.opacity(0.74))
                 }
             }
-            .navigationTitle("Add Prescription")
+            .scrollContentBackground(.hidden)
+            .presentationBackground(.clear)
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
+            .lensNavigationChrome()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
             }
+            .preferredColorScheme(.light)
         }
     }
 
     private func save() {
-        let rx = Prescription()
+        let rx = prescription ?? Prescription()
         rx.doctorName = doctorName.isEmpty ? nil : doctorName
         rx.clinicName = clinicName.isEmpty ? nil : clinicName
         rx.notes = notes.isEmpty ? nil : notes
@@ -171,7 +253,16 @@ private struct AddPrescriptionSheet: View {
         rx.osAdd = Double(osAdd)
         rx.osBrand = osBrand.isEmpty ? nil : osBrand
 
-        viewModel.addPrescription(rx)
+        if prescription == nil {
+            viewModel.addPrescription(rx)
+        } else {
+            viewModel.savePrescriptionChanges()
+        }
+    }
+
+    private static func stringValue(_ value: Double?, defaultValue: String = "", format: String = "%.1f") -> String {
+        guard let value else { return defaultValue }
+        return String(format: format, value)
     }
 }
 

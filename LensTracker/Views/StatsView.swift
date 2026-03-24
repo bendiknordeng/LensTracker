@@ -5,71 +5,78 @@ struct StatsView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 20) {
-                    let totalPairs = viewModel.totalPairsUsed()
-                    let avgWear = viewModel.averageWearDays()
-                    let compliance = viewModel.complianceRate()
-                    let streak = viewModel.longestStreak()
+            ZStack {
+                LensScreenBackground()
 
-                    if totalPairs == 0 {
-                        ContentUnavailableView(
-                            "No Stats Yet",
-                            systemImage: "chart.bar",
-                            description: Text("Start tracking your lenses to see statistics here.")
-                        )
-                    } else {
-                        LazyVGrid(columns: [.init(), .init()], spacing: 16) {
-                            StatCard(
-                                title: "Total Pairs",
-                                value: "\(totalPairs)",
-                                icon: "eye",
-                                color: .blue
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 20) {
+                        let totalPairs = viewModel.totalPairsUsed()
+                        let avgWear = viewModel.averageWearDays()
+                        let compliance = viewModel.complianceRate()
+                        let streak = viewModel.longestStreak()
+
+                        LensSectionTitle(eyebrow: "Insights", title: "See the habits behind your lens routine.")
+                            .padding(.horizontal)
+                            .padding(.top, 8)
+
+                        if totalPairs == 0 {
+                            ContentUnavailableView(
+                                "No Stats Yet",
+                                systemImage: "chart.bar",
+                                description: Text("Start tracking your lenses to see statistics here.")
                             )
-                            StatCard(
-                                title: "Avg Wear",
-                                value: String(format: "%.1f days", avgWear),
-                                icon: "clock",
-                                color: .purple
-                            )
-                            StatCard(
-                                title: "On-Time Rate",
-                                value: "\(Int(compliance * 100))%",
-                                icon: "checkmark.circle",
-                                color: compliance >= 0.8 ? .green : .orange
-                            )
-                            StatCard(
-                                title: "Best Streak",
-                                value: "\(streak) pairs",
-                                icon: "flame",
-                                color: .orange
-                            )
+                        } else {
+                            LazyVGrid(columns: [.init(), .init()], spacing: 16) {
+                                StatCard(
+                                    title: "Total Pairs",
+                                    value: "\(totalPairs)",
+                                    icon: "eye",
+                                    color: LensPalette.teal
+                                )
+                                StatCard(
+                                    title: "Avg Wear",
+                                    value: String(format: "%.1f days", avgWear),
+                                    icon: "clock",
+                                    color: LensPalette.gold
+                                )
+                                StatCard(
+                                    title: "On-Time Rate",
+                                    value: "\(Int(compliance * 100))%",
+                                    icon: "checkmark.circle",
+                                    color: compliance >= 0.8 ? LensPalette.teal : LensPalette.coral
+                                )
+                                StatCard(
+                                    title: "Best Streak",
+                                    value: "\(streak) pairs",
+                                    icon: "flame",
+                                    color: LensPalette.coral
+                                )
+                            }
+                            .padding(.horizontal)
+
+                            VStack(alignment: .leading, spacing: 10) {
+                                LensSectionTitle(eyebrow: "How to Read", title: "What these numbers mean")
+
+                                Text("**On-Time Rate** measures how often you replace your lenses within the recommended schedule, with a one-day grace period.")
+                                    .font(.subheadline)
+                                    .foregroundStyle(LensPalette.slate)
+
+                                Text("**Best Streak** is your longest run of consecutive on-time replacements.")
+                                    .font(.subheadline)
+                                    .foregroundStyle(LensPalette.slate)
+                            }
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .lensCardStyle()
+                            .padding(.horizontal)
                         }
-                        .padding(.horizontal)
-
-                        // Compliance explanation
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("About Your Stats")
-                                .font(.headline)
-
-                            Text("**On-Time Rate** measures how often you replace your lenses within the recommended schedule (with a 1-day grace period).")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-
-                            Text("**Best Streak** is your longest run of consecutive on-time replacements.")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.ultraThinMaterial)
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
-                        .padding(.horizontal)
                     }
+                    .padding(.bottom, 28)
                 }
             }
             .navigationTitle("Stats")
             .navigationBarTitleDisplayMode(.inline)
+            .lensNavigationChrome()
         }
     }
 }
@@ -81,21 +88,21 @@ private struct StatCard: View {
     let color: Color
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(alignment: .leading, spacing: 12) {
             Image(systemName: icon)
                 .font(.title2)
                 .foregroundStyle(color)
 
             Text(value)
                 .font(.title2.weight(.bold).monospacedDigit())
+                .foregroundStyle(LensPalette.ink)
 
             Text(title)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(LensPalette.slate)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
-        .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .padding(18)
+        .lensCardStyle()
     }
 }

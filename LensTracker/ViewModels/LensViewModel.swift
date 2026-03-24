@@ -163,6 +163,12 @@ final class LensViewModel {
         dataVersion += 1
     }
 
+    func savePrescriptionChanges() {
+        guard let context = modelContext else { return }
+        try? context.save()
+        dataVersion += 1
+    }
+
     func deletePrescription(_ prescription: Prescription) {
         guard let context = modelContext else { return }
         context.delete(prescription)

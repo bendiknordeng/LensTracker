@@ -27,7 +27,7 @@ struct ContentView: View {
                     Label("Stats", systemImage: "chart.bar")
                 }
         }
-        .tint(.blue)
+        .tint(LensPalette.teal)
         .onAppear {
             viewModel.modelContext = modelContext
             viewModel.syncWidget()

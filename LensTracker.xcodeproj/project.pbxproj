@@ -10,6 +10,7 @@
 		028666098B1DF60425FEF5F3 /* Prescription.swift in Sources */ = {isa = PBXBuildFile; fileRef = D85A853D6471E5990D3B60AD /* Prescription.swift */; };
 		03AADD6F0F4CF3C79E01B31F /* SharedDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EC745C275D7CD44B0E7A7C2 /* SharedDataManager.swift */; };
 		096A56CA68399F5493DAE60A /* StatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0743C6A42943B5445053A0EE /* StatsView.swift */; };
+		1433DB492F7332C60024F844 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1433DB482F7332C60024F844 /* DesignSystem.swift */; };
 		22D3B706DE1C699BFB4C0CBB /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D03E90A7E9472E11164F1309 /* HistoryView.swift */; };
 		2D74B000A528930BF1376B70 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0EBA8F54682F37CB76C45E9E /* Assets.xcassets */; };
 		574CA550BF63631F4F4B4655 /* LensTrackerWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 5659FEC05E280EA6A739E710 /* LensTrackerWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -54,6 +55,7 @@
 		0743C6A42943B5445053A0EE /* StatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
 		0EBA8F54682F37CB76C45E9E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		13AEA5FE010C5C88956C3659 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
+		1433DB482F7332C60024F844 /* DesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignSystem.swift; sourceTree = "<group>"; };
 		178F8DF147C3F8FE90291E30 /* LensTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LensTrackerApp.swift; sourceTree = "<group>"; };
 		1A394D5EFCB27D6BE0058DB8 /* LensRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LensRecord.swift; sourceTree = "<group>"; };
 		1DD22E2CB5EDDDBA5DB0C861 /* LensTrackerWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LensTrackerWidgetBundle.swift; sourceTree = "<group>"; };
@@ -84,6 +86,7 @@
 				FD963360378CADF52374BE6F /* PrescriptionView.swift */,
 				0743C6A42943B5445053A0EE /* StatsView.swift */,
 				20AD06A7ACB76909DFB9C9A9 /* TimerView.swift */,
+				1433DB482F7332C60024F844 /* DesignSystem.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -259,6 +262,7 @@
 				8FF2D48A9AB33717CF8F652C /* LensRecord.swift in Sources */,
 				A4FCDB7CDF4378CB51F2F1BD /* LensTrackerApp.swift in Sources */,
 				D7F975F09833660F5C72FE44 /* LensViewModel.swift in Sources */,
+				1433DB492F7332C60024F844 /* DesignSystem.swift in Sources */,
 				D33EC4B0B247F91B033F1DD7 /* NotificationManager.swift in Sources */,
 				028666098B1DF60425FEF5F3 /* Prescription.swift in Sources */,
 				61BD949744F284FCC395EB3C /* PrescriptionDetailView.swift in Sources */,

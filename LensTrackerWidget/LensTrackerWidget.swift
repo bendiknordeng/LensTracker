@@ -93,6 +93,7 @@ struct LensTrackerWidget: Widget {
 
 struct HomeScreenWidgetView: View {
     @Environment(\.widgetFamily) private var family
+    @Environment(\.colorScheme) private var colorScheme
     let entry: LensTrackerTimelineEntry
 
     var body: some View {
@@ -107,10 +108,10 @@ struct HomeScreenWidgetView: View {
             VStack(spacing: 8) {
                 Image(systemName: "eye")
                     .font(.largeTitle)
-                    .foregroundStyle(WidgetLensPalette.slate)
+                    .foregroundStyle(secondaryTextColor)
                 Text("No active lenses")
                     .font(.caption)
-                    .foregroundStyle(WidgetLensPalette.slate)
+                    .foregroundStyle(secondaryTextColor)
             }
             .widgetURL(URL(string: "lenstracker://open"))
         }
@@ -126,8 +127,8 @@ struct HomeScreenWidgetView: View {
                         .font(.system(size: 11, weight: .semibold))
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
-                        .background(.white.opacity(0.82))
-                        .foregroundStyle(WidgetLensPalette.ink)
+                        .background(resetBackgroundColor)
+                        .foregroundStyle(primaryTextColor)
                         .clipShape(Capsule())
                 }
                 .offset(y: 10)
@@ -145,11 +146,11 @@ struct HomeScreenWidgetView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(data.lensType)
                             .font(.headline)
-                            .foregroundStyle(WidgetLensPalette.ink)
+                            .foregroundStyle(primaryTextColor)
                             .lineLimit(1)
                         Text(data.daysRemaining == 1 ? "1 day remaining" : "\(data.daysRemaining) days remaining")
                             .font(.caption)
-                            .foregroundStyle(WidgetLensPalette.slate)
+                            .foregroundStyle(secondaryTextColor)
                     }
 
                     Spacer(minLength: 8)
@@ -160,8 +161,8 @@ struct HomeScreenWidgetView: View {
                                 .font(.caption.weight(.semibold))
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 6)
-                                .background(.white.opacity(0.82))
-                                .foregroundStyle(WidgetLensPalette.ink)
+                                .background(resetBackgroundColor)
+                                .foregroundStyle(primaryTextColor)
                                 .clipShape(Capsule())
                         }
                     }
@@ -183,12 +184,12 @@ struct HomeScreenWidgetView: View {
     private func timerDial(_ data: WidgetLensData, size: CGFloat, lineWidth: CGFloat, numberFont: CGFloat) -> some View {
         ZStack {
             Circle()
-                .stroke(WidgetLensPalette.slate.opacity(0.16), lineWidth: lineWidth)
+                .stroke(trackColor, lineWidth: lineWidth)
             Circle()
                 .trim(from: 0, to: data.progress)
                 .stroke(
                     AngularGradient(
-                        colors: [widgetProgressColor(data).opacity(0.45), widgetProgressColor(data), WidgetLensPalette.ink],
+                        colors: [widgetProgressColor(data).opacity(0.45), widgetProgressColor(data), dialDepthColor],
                         center: .center
                     ),
                     style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
@@ -198,10 +199,10 @@ struct HomeScreenWidgetView: View {
             VStack(spacing: 2) {
                 Text("\(data.daysRemaining)")
                     .font(.system(size: numberFont, weight: .bold, design: .rounded))
-                    .foregroundStyle(WidgetLensPalette.ink)
+                    .foregroundStyle(primaryTextColor)
                 Text(data.daysRemaining == 1 ? "day left" : "days left")
                     .font(.caption2)
-                    .foregroundStyle(WidgetLensPalette.slate)
+                    .foregroundStyle(secondaryTextColor)
                     .multilineTextAlignment(.center)
             }
         }
@@ -212,16 +213,44 @@ struct HomeScreenWidgetView: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
                 .font(.caption2)
-                .foregroundStyle(WidgetLensPalette.slate)
+                .foregroundStyle(secondaryTextColor)
             Text(value)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(WidgetLensPalette.ink)
+                .foregroundStyle(primaryTextColor)
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(8)
-        .background(.white.opacity(0.58))
+        .background(cardBackgroundColor)
         .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private var isDarkMode: Bool {
+        colorScheme == .dark
+    }
+
+    private var primaryTextColor: Color {
+        isDarkMode ? Color.white.opacity(0.96) : WidgetLensPalette.ink
+    }
+
+    private var secondaryTextColor: Color {
+        isDarkMode ? Color.white.opacity(0.68) : WidgetLensPalette.slate
+    }
+
+    private var trackColor: Color {
+        isDarkMode ? Color.white.opacity(0.12) : WidgetLensPalette.slate.opacity(0.16)
+    }
+
+    private var dialDepthColor: Color {
+        isDarkMode ? Color.white.opacity(0.9) : WidgetLensPalette.ink
+    }
+
+    private var cardBackgroundColor: Color {
+        isDarkMode ? Color.white.opacity(0.10) : .white.opacity(0.58)
+    }
+
+    private var resetBackgroundColor: Color {
+        isDarkMode ? Color.white.opacity(0.14) : .white.opacity(0.82)
     }
 
 }
@@ -317,36 +346,69 @@ struct LockScreenWidgetView: View {
     }
 }
 private struct WidgetLensBackground: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
         ZStack {
-            LinearGradient(
-                colors: [
-                    Color(red: 0.98, green: 0.97, blue: 0.94),
-                    Color(red: 0.93, green: 0.94, blue: 0.91)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            if colorScheme == .dark {
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.09, green: 0.12, blue: 0.15),
+                        Color(red: 0.11, green: 0.16, blue: 0.18)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
 
-            RadialGradient(
-                colors: [
-                    WidgetLensPalette.sand.opacity(0.28),
-                    .clear
-                ],
-                center: .topTrailing,
-                startRadius: 10,
-                endRadius: 160
-            )
+                RadialGradient(
+                    colors: [
+                        WidgetLensPalette.teal.opacity(0.32),
+                        .clear
+                    ],
+                    center: .topTrailing,
+                    startRadius: 10,
+                    endRadius: 170
+                )
 
-            RadialGradient(
-                colors: [
-                    WidgetLensPalette.teal.opacity(0.16),
-                    .clear
-                ],
-                center: .bottomLeading,
-                startRadius: 12,
-                endRadius: 180
-            )
+                RadialGradient(
+                    colors: [
+                        WidgetLensPalette.gold.opacity(0.12),
+                        .clear
+                    ],
+                    center: .bottomLeading,
+                    startRadius: 12,
+                    endRadius: 180
+                )
+            } else {
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.98, green: 0.97, blue: 0.94),
+                        Color(red: 0.93, green: 0.94, blue: 0.91)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+
+                RadialGradient(
+                    colors: [
+                        WidgetLensPalette.sand.opacity(0.28),
+                        .clear
+                    ],
+                    center: .topTrailing,
+                    startRadius: 10,
+                    endRadius: 160
+                )
+
+                RadialGradient(
+                    colors: [
+                        WidgetLensPalette.teal.opacity(0.16),
+                        .clear
+                    ],
+                    center: .bottomLeading,
+                    startRadius: 12,
+                    endRadius: 180
+                )
+            }
         }
     }
 }

@@ -5,29 +5,36 @@ struct HistoryView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                let records = viewModel.allRecords()
-                if records.isEmpty {
-                    ContentUnavailableView(
-                        "No History",
-                        systemImage: "clock.arrow.circlepath",
-                        description: Text("Your lens change history will appear here once you start tracking.")
-                    )
-                } else {
-                    List {
-                        ForEach(records, id: \.id) { record in
-                            HistoryRow(record: record)
-                        }
-                        .onDelete { offsets in
-                            for i in offsets {
-                                viewModel.deleteRecord(records[i])
+            ZStack {
+                LensScreenBackground()
+
+                Group {
+                    let records = viewModel.allRecords()
+                    if records.isEmpty {
+                        ContentUnavailableView(
+                            "No History",
+                            systemImage: "clock.arrow.circlepath",
+                            description: Text("Your lens change history will appear here once you start tracking.")
+                        )
+                    } else {
+                        List {
+                            ForEach(records, id: \.id) { record in
+                                HistoryRow(record: record)
+                            }
+                            .onDelete { offsets in
+                                for i in offsets {
+                                    viewModel.deleteRecord(records[i])
+                                }
                             }
                         }
+                        .scrollContentBackground(.hidden)
+                        .listStyle(.plain)
                     }
                 }
             }
             .navigationTitle("History")
             .navigationBarTitleDisplayMode(.inline)
+            .lensNavigationChrome()
         }
     }
 }
@@ -41,20 +48,21 @@ private struct HistoryRow: View {
                 HStack {
                     Text(record.lensTypeName)
                         .font(.headline)
+                        .foregroundStyle(LensPalette.ink)
                     if record.isActive {
                         Text("Active")
                             .font(.caption.weight(.semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(LensPalette.teal)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 2)
-                            .background(.green)
+                            .background(LensPalette.teal.opacity(0.16))
                             .clipShape(Capsule())
                     }
                 }
 
                 Text("\(record.startDate.formatted(.dateTime.month(.abbreviated).day())) → \(endDateText)")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(LensPalette.slate)
             }
 
             Spacer()
@@ -65,10 +73,14 @@ private struct HistoryRow: View {
                     .foregroundStyle(statusColor)
                 Text("of \(record.replacementDays)d")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(LensPalette.slate)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 12)
+        .padding(.horizontal, 16)
+        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+        .listRowBackground(Color.clear)
+        .lensCardStyle()
     }
 
     private var endDateText: String {
@@ -85,6 +97,6 @@ private struct HistoryRow: View {
     private var statusColor: Color {
         if wornDays > record.replacementDays { return .red }
         if wornDays >= record.replacementDays - 2 { return .orange }
-        return .primary
+        return LensPalette.ink
     }
 }
