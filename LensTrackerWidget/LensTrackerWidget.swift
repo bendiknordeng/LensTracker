@@ -1,6 +1,15 @@
 import WidgetKit
 import SwiftUI
 
+enum WidgetLensPalette {
+    static let ink = Color(red: 0.10, green: 0.16, blue: 0.19)
+    static let slate = Color(red: 0.28, green: 0.36, blue: 0.41)
+    static let sand = Color(red: 0.88, green: 0.82, blue: 0.70)
+    static let teal = Color(red: 0.21, green: 0.56, blue: 0.56)
+    static let coral = Color(red: 0.87, green: 0.42, blue: 0.35)
+    static let gold = Color(red: 0.78, green: 0.60, blue: 0.28)
+}
+
 // MARK: - Shared Data (duplicated for widget target)
 
 struct WidgetLensData {
@@ -72,7 +81,9 @@ struct LensTrackerWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: LensTrackerTimelineProvider()) { entry in
             HomeScreenWidgetView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+                .containerBackground(for: .widget) {
+                    WidgetLensBackground()
+                }
         }
         .configurationDisplayName("Lens Tracker")
         .description("See when to change your contact lenses.")
@@ -96,10 +107,10 @@ struct HomeScreenWidgetView: View {
             VStack(spacing: 8) {
                 Image(systemName: "eye")
                     .font(.largeTitle)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(WidgetLensPalette.slate)
                 Text("No active lenses")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(WidgetLensPalette.slate)
             }
             .widgetURL(URL(string: "lenstracker://open"))
         }
@@ -115,7 +126,8 @@ struct HomeScreenWidgetView: View {
                         .font(.system(size: 11, weight: .semibold))
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
-                        .background(.thinMaterial)
+                        .background(.white.opacity(0.82))
+                        .foregroundStyle(WidgetLensPalette.ink)
                         .clipShape(Capsule())
                 }
                 .offset(y: 10)
@@ -133,10 +145,11 @@ struct HomeScreenWidgetView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(data.lensType)
                             .font(.headline)
+                            .foregroundStyle(WidgetLensPalette.ink)
                             .lineLimit(1)
                         Text(data.daysRemaining == 1 ? "1 day remaining" : "\(data.daysRemaining) days remaining")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(WidgetLensPalette.slate)
                     }
 
                     Spacer(minLength: 8)
@@ -147,7 +160,8 @@ struct HomeScreenWidgetView: View {
                                 .font(.caption.weight(.semibold))
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 6)
-                                .background(.thinMaterial)
+                                .background(.white.opacity(0.82))
+                                .foregroundStyle(WidgetLensPalette.ink)
                                 .clipShape(Capsule())
                         }
                     }
@@ -160,7 +174,7 @@ struct HomeScreenWidgetView: View {
 
                 Gauge(value: data.progress) { }
                     .gaugeStyle(.accessoryLinearCapacity)
-                    .tint(progressColor(data))
+                    .tint(widgetProgressColor(data))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
@@ -169,19 +183,25 @@ struct HomeScreenWidgetView: View {
     private func timerDial(_ data: WidgetLensData, size: CGFloat, lineWidth: CGFloat, numberFont: CGFloat) -> some View {
         ZStack {
             Circle()
-                .stroke(Color.gray.opacity(0.3), lineWidth: lineWidth)
+                .stroke(WidgetLensPalette.slate.opacity(0.16), lineWidth: lineWidth)
             Circle()
                 .trim(from: 0, to: data.progress)
-                .stroke(progressColor(data), style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                .stroke(
+                    AngularGradient(
+                        colors: [widgetProgressColor(data).opacity(0.45), widgetProgressColor(data), WidgetLensPalette.ink],
+                        center: .center
+                    ),
+                    style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
+                )
                 .rotationEffect(.degrees(-90))
 
             VStack(spacing: 2) {
                 Text("\(data.daysRemaining)")
                     .font(.system(size: numberFont, weight: .bold, design: .rounded))
-                    .foregroundStyle(progressColor(data))
+                    .foregroundStyle(WidgetLensPalette.ink)
                 Text(data.daysRemaining == 1 ? "day left" : "days left")
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(WidgetLensPalette.slate)
                     .multilineTextAlignment(.center)
             }
         }
@@ -192,22 +212,18 @@ struct HomeScreenWidgetView: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(WidgetLensPalette.slate)
             Text(value)
                 .font(.caption.weight(.semibold))
+                .foregroundStyle(WidgetLensPalette.ink)
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(8)
-        .background(.thinMaterial)
+        .background(.white.opacity(0.58))
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
-    func progressColor(_ data: WidgetLensData) -> Color {
-        if data.isOverdue { return .red }
-        if data.daysRemaining <= 3 { return .orange }
-        return .blue
-    }
 }
 
 // MARK: - Lock Screen Widget
@@ -249,14 +265,16 @@ struct LockScreenWidgetView: View {
         ZStack {
             if let data = entry.data, data.isActive {
                 Gauge(value: data.progress) { }
-                .gaugeStyle(.accessoryCircularCapacity)
+                    .gaugeStyle(.accessoryCircularCapacity)
+                    .tint(widgetProgressColor(data))
                 .overlay {
-                    VStack(spacing: 1) {
+                    VStack(spacing: -1) {
                         Text("\(data.daysRemaining)")
                             .font(.system(.title3, design: .rounded, weight: .bold))
-                        Text("d")
+                        Image(systemName: "eye")
                             .font(.system(size: 9, weight: .medium))
                     }
+                    .widgetAccentable()
                 }
             } else {
                 Text("—")
@@ -270,15 +288,17 @@ struct LockScreenWidgetView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(data.daysRemaining == 1 ? "1 day left" : "\(data.daysRemaining)d left")
                         .font(.headline)
+                        .foregroundStyle(WidgetLensPalette.ink)
                     Text(data.lensType)
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(WidgetLensPalette.slate)
                 }
 
                 Spacer(minLength: 8)
 
                 Gauge(value: data.progress) { }
                     .gaugeStyle(.accessoryLinearCapacity)
+                    .tint(widgetProgressColor(data))
             } else {
                 Text("No active lenses")
                     .font(.caption)
@@ -295,4 +315,44 @@ struct LockScreenWidgetView: View {
             }
         }
     }
+}
+private struct WidgetLensBackground: View {
+    var body: some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    Color(red: 0.98, green: 0.97, blue: 0.94),
+                    Color(red: 0.93, green: 0.94, blue: 0.91)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+            RadialGradient(
+                colors: [
+                    WidgetLensPalette.sand.opacity(0.28),
+                    .clear
+                ],
+                center: .topTrailing,
+                startRadius: 10,
+                endRadius: 160
+            )
+
+            RadialGradient(
+                colors: [
+                    WidgetLensPalette.teal.opacity(0.16),
+                    .clear
+                ],
+                center: .bottomLeading,
+                startRadius: 12,
+                endRadius: 180
+            )
+        }
+    }
+}
+
+private func widgetProgressColor(_ data: WidgetLensData) -> Color {
+    if data.isOverdue { return WidgetLensPalette.coral }
+    if data.daysRemaining <= 3 { return WidgetLensPalette.gold }
+    return WidgetLensPalette.teal
 }
