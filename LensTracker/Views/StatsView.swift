@@ -67,9 +67,9 @@ struct StatsView: View {
                         .padding(.horizontal)
                     }
                 }
-                .padding(.top)
             }
             .navigationTitle("Stats")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 }

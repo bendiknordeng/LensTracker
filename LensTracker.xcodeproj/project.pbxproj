@@ -58,10 +58,10 @@
 		1A394D5EFCB27D6BE0058DB8 /* LensRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LensRecord.swift; sourceTree = "<group>"; };
 		1DD22E2CB5EDDDBA5DB0C861 /* LensTrackerWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LensTrackerWidgetBundle.swift; sourceTree = "<group>"; };
 		20AD06A7ACB76909DFB9C9A9 /* TimerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerView.swift; sourceTree = "<group>"; };
-		24C9CE022FE635B1F2A6DA79 /* LensTracker.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = LensTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		24C9CE022FE635B1F2A6DA79 /* LensTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LensTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		45C000B01F5A6A46683121B4 /* LensTrackerWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LensTrackerWidgetExtension.entitlements; sourceTree = "<group>"; };
 		48C092C4CC76957FE2D7CF38 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		5659FEC05E280EA6A739E710 /* LensTrackerWidgetExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = LensTrackerWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		5659FEC05E280EA6A739E710 /* LensTrackerWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LensTrackerWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		5EC745C275D7CD44B0E7A7C2 /* SharedDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedDataManager.swift; sourceTree = "<group>"; };
 		606F9CA12447E6BC1FCB92FD /* LensViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LensViewModel.swift; sourceTree = "<group>"; };
 		60B9D5B34A8BD22791F5DED5 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -208,15 +208,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1600;
-				TargetAttributes = {
-					662613C6FA898008C1FBEAE1 = {
-						DevelopmentTeam = "";
-					};
-					C26A3F1165F888FC9297E336 = {
-						DevelopmentTeam = "";
-					};
-				};
+				LastUpgradeCheck = 2630;
 			};
 			buildConfigurationList = 618F3F1905C10D0127E929EC /* Build configuration list for PBXProject "LensTracker" */;
 			developmentRegion = en;
@@ -301,6 +293,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = LensTrackerWidget/LensTrackerWidgetExtension.entitlements;
+				DEVELOPMENT_TEAM = 5SAQ8QD42J;
 				INFOPLIST_FILE = LensTrackerWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -319,6 +312,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = LensTracker/LensTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 5SAQ8QD42J;
 				INFOPLIST_FILE = LensTracker/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -336,6 +330,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = LensTracker/LensTracker.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 5SAQ8QD42J;
 				INFOPLIST_FILE = LensTracker/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -351,6 +346,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = LensTrackerWidget/LensTrackerWidgetExtension.entitlements;
+				DEVELOPMENT_TEAM = 5SAQ8QD42J;
 				INFOPLIST_FILE = LensTrackerWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -401,6 +397,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -414,6 +411,7 @@
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.9;
@@ -458,6 +456,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -478,6 +477,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.9;

@@ -3,7 +3,7 @@ import SwiftUI
 
 // MARK: - Shared Data (duplicated for widget target)
 
-private struct WidgetLensData {
+struct WidgetLensData {
     let startDate: Date
     let replacementDays: Int
     let lensType: String
@@ -81,39 +81,16 @@ struct LensTrackerWidget: Widget {
 }
 
 struct HomeScreenWidgetView: View {
+    @Environment(\.widgetFamily) private var family
     let entry: LensTrackerTimelineEntry
 
     var body: some View {
         if let data = entry.data, data.isActive {
-            VStack(spacing: 8) {
-                ZStack {
-                    Circle()
-                        .stroke(Color.gray.opacity(0.3), lineWidth: 6)
-                    Circle()
-                        .trim(from: 0, to: data.progress)
-                        .stroke(progressColor(data), style: StrokeStyle(lineWidth: 6, lineCap: .round))
-                        .rotationEffect(.degrees(-90))
-
-                    VStack(spacing: 0) {
-                        Text("\(data.daysRemaining)")
-                            .font(.system(.title, design: .rounded, weight: .bold))
-                            .foregroundStyle(progressColor(data))
-                        Text("days")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .frame(width: 70, height: 70)
-
-                if data.isOverdue {
-                    Text("Change now!")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.red)
-                } else {
-                    Text("Due \(data.dueDate.formatted(.dateTime.month(.abbreviated).day()))")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+            switch family {
+            case .systemMedium:
+                mediumWidget(data)
+            default:
+                smallWidget(data)
             }
         } else {
             VStack(spacing: 8) {
@@ -124,7 +101,106 @@ struct HomeScreenWidgetView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            .widgetURL(URL(string: "lenstracker://open"))
         }
+    }
+
+    private func smallWidget(_ data: WidgetLensData) -> some View {
+        ZStack(alignment: .bottom) {
+            timerDial(data, size: 114, lineWidth: 8, numberFont: 34)
+
+            if data.isOverdue {
+                Link(destination: URL(string: "lenstracker://reset")!) {
+                    Label("Reset", systemImage: "arrow.clockwise")
+                        .font(.system(size: 11, weight: .semibold))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(.thinMaterial)
+                        .clipShape(Capsule())
+                }
+                .offset(y: 10)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+    }
+
+    private func mediumWidget(_ data: WidgetLensData) -> some View {
+        HStack(spacing: 16) {
+            timerDial(data, size: 116, lineWidth: 10, numberFont: 32)
+
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(data.lensType)
+                            .font(.headline)
+                            .lineLimit(1)
+                        Text(data.daysRemaining == 1 ? "1 day remaining" : "\(data.daysRemaining) days remaining")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer(minLength: 8)
+
+                    if data.isOverdue {
+                        Link(destination: URL(string: "lenstracker://reset")!) {
+                            Label("Reset", systemImage: "arrow.clockwise")
+                                .font(.caption.weight(.semibold))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(.thinMaterial)
+                                .clipShape(Capsule())
+                        }
+                    }
+                }
+
+                HStack(spacing: 8) {
+                    mediumPill(title: "Started", value: data.startDate.formatted(.dateTime.month(.abbreviated).day()))
+                    mediumPill(title: "Due", value: data.dueDate.formatted(.dateTime.month(.abbreviated).day()))
+                }
+
+                Gauge(value: data.progress) { }
+                    .gaugeStyle(.accessoryLinearCapacity)
+                    .tint(progressColor(data))
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+    }
+
+    private func timerDial(_ data: WidgetLensData, size: CGFloat, lineWidth: CGFloat, numberFont: CGFloat) -> some View {
+        ZStack {
+            Circle()
+                .stroke(Color.gray.opacity(0.3), lineWidth: lineWidth)
+            Circle()
+                .trim(from: 0, to: data.progress)
+                .stroke(progressColor(data), style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+
+            VStack(spacing: 2) {
+                Text("\(data.daysRemaining)")
+                    .font(.system(size: numberFont, weight: .bold, design: .rounded))
+                    .foregroundStyle(progressColor(data))
+                Text(data.daysRemaining == 1 ? "day left" : "days left")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+        }
+        .frame(width: size, height: size)
+    }
+
+    private func mediumPill(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.caption.weight(.semibold))
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(8)
+        .background(.thinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
     func progressColor(_ data: WidgetLensData) -> Color {
@@ -142,6 +218,9 @@ struct LensTrackerLockScreenWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: LensTrackerTimelineProvider()) { entry in
             LockScreenWidgetView(entry: entry)
+                .containerBackground(for: .widget) {
+                    AccessoryWidgetBackground()
+                }
         }
         .configurationDisplayName("Lens Timer")
         .description("Days until lens change on your lock screen.")
@@ -169,36 +248,37 @@ struct LockScreenWidgetView: View {
     private var circularView: some View {
         ZStack {
             if let data = entry.data, data.isActive {
-                Gauge(value: data.progress) {
-                    Image(systemName: "eye")
-                }
+                Gauge(value: data.progress) { }
                 .gaugeStyle(.accessoryCircularCapacity)
                 .overlay {
-                    VStack(spacing: 0) {
+                    VStack(spacing: 1) {
                         Text("\(data.daysRemaining)")
                             .font(.system(.title3, design: .rounded, weight: .bold))
-                        Text("days")
-                            .font(.system(size: 8))
+                        Text("d")
+                            .font(.system(size: 9, weight: .medium))
                     }
                 }
             } else {
-                Image(systemName: "eye.slash")
+                Text("—")
             }
         }
     }
 
     private var rectangularView: some View {
-        HStack {
+        HStack(spacing: 8) {
             if let data = entry.data, data.isActive {
-                Gauge(value: data.progress) {
-                    Image(systemName: "eye")
-                } currentValueLabel: {
-                    Text("\(data.daysRemaining)")
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(data.daysRemaining == 1 ? "1 day left" : "\(data.daysRemaining)d left")
+                        .font(.headline)
+                    Text(data.lensType)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
                 }
-                .gaugeStyle(.accessoryLinearCapacity)
 
-                Text(data.isOverdue ? "Overdue!" : "\(data.daysRemaining)d left")
-                    .font(.headline)
+                Spacer(minLength: 8)
+
+                Gauge(value: data.progress) { }
+                    .gaugeStyle(.accessoryLinearCapacity)
             } else {
                 Text("No active lenses")
                     .font(.caption)
@@ -209,13 +289,9 @@ struct LockScreenWidgetView: View {
     private var inlineView: some View {
         Group {
             if let data = entry.data, data.isActive {
-                if data.isOverdue {
-                    Text("👁 Lenses overdue!")
-                } else {
-                    Text("👁 \(data.daysRemaining)d until lens change")
-                }
+                Text("Lens timer: \(data.daysRemaining)d left")
             } else {
-                Text("👁 No active lenses")
+                Text("Lens timer: inactive")
             }
         }
     }

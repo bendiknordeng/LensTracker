@@ -32,6 +32,7 @@ struct PrescriptionView: View {
                 }
             }
             .navigationTitle("Prescriptions")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
@@ -54,18 +55,9 @@ private struct PrescriptionRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(prescription.date.formatted(.dateTime.year().month(.abbreviated).day()))
+                Text("Contact Lens Prescription")
                     .font(.headline)
                 Spacer()
-                if prescription.isExpired {
-                    Text("Expired")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 2)
-                        .background(.red)
-                        .clipShape(Capsule())
-                }
             }
             if let doctor = prescription.doctorName, !doctor.isEmpty {
                 Text("Dr. \(doctor)")
@@ -89,25 +81,23 @@ private struct AddPrescriptionSheet: View {
     @Environment(LensViewModel.self) private var viewModel
     @Environment(\.dismiss) private var dismiss
 
-    @State private var date = Date.now
-    @State private var expirationDate = Calendar.current.date(byAdding: .year, value: 1, to: .now) ?? .now
     @State private var doctorName = ""
     @State private var clinicName = ""
     @State private var notes = ""
 
     // OD
-    @State private var odSphere = ""
-    @State private var odCylinder = ""
-    @State private var odAxis = ""
+    @State private var odSphere = "+0.00"
+    @State private var odCylinder = "+0.00"
+    @State private var odAxis = "90"
     @State private var odBC = ""
     @State private var odDIA = ""
     @State private var odAdd = ""
     @State private var odBrand = ""
 
     // OS
-    @State private var osSphere = ""
-    @State private var osCylinder = ""
-    @State private var osAxis = ""
+    @State private var osSphere = "+0.00"
+    @State private var osCylinder = "+0.00"
+    @State private var osAxis = "90"
     @State private var osBC = ""
     @State private var osDIA = ""
     @State private var osAdd = ""
@@ -116,11 +106,6 @@ private struct AddPrescriptionSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Prescription Date") {
-                    DatePicker("Date", selection: $date, displayedComponents: .date)
-                    DatePicker("Expires", selection: $expirationDate, displayedComponents: .date)
-                }
-
                 Section("Doctor") {
                     TextField("Doctor name", text: $doctorName)
                     TextField("Clinic name", text: $clinicName)
@@ -165,8 +150,7 @@ private struct AddPrescriptionSheet: View {
     }
 
     private func save() {
-        let rx = Prescription(date: date)
-        rx.expirationDate = expirationDate
+        let rx = Prescription()
         rx.doctorName = doctorName.isEmpty ? nil : doctorName
         rx.clinicName = clinicName.isEmpty ? nil : clinicName
         rx.notes = notes.isEmpty ? nil : notes
@@ -201,40 +185,73 @@ private struct EyeFields: View {
     @Binding var brand: String
 
     var body: some View {
-        HStack {
-            VStack(alignment: .leading) {
-                Text("SPH").font(.caption2).foregroundStyle(.secondary)
-                TextField("±0.00", text: $sphere)
-                    .keyboardType(.decimalPad)
+        VStack(spacing: 16) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 14) {
+                    DialPicker(title: "SPH", selection: $sphere, options: PrescriptionDialOptions.sphereValues)
+                    DialPicker(title: "CYL", selection: $cylinder, options: PrescriptionDialOptions.cylinderValues)
+                    DialPicker(title: "AXIS", selection: $axis, options: PrescriptionDialOptions.axisValues)
+                }
+                .padding(.vertical, 4)
             }
-            VStack(alignment: .leading) {
-                Text("CYL").font(.caption2).foregroundStyle(.secondary)
-                TextField("±0.00", text: $cylinder)
-                    .keyboardType(.decimalPad)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 14) {
+                    DialPicker(title: "BC", selection: $bc, options: PrescriptionDialOptions.baseCurveValues)
+                    DialPicker(title: "DIA", selection: $dia, options: PrescriptionDialOptions.diameterValues)
+                    DialPicker(title: "ADD", selection: $add, options: PrescriptionDialOptions.addValues)
+                }
+                .padding(.vertical, 4)
             }
-            VStack(alignment: .leading) {
-                Text("AXIS").font(.caption2).foregroundStyle(.secondary)
-                TextField("0-180", text: $axis)
-                    .keyboardType(.numberPad)
-            }
+
+            TextField("Brand / Product name", text: $brand)
         }
-        HStack {
-            VStack(alignment: .leading) {
-                Text("BC").font(.caption2).foregroundStyle(.secondary)
-                TextField("8.6", text: $bc)
-                    .keyboardType(.decimalPad)
+    }
+}
+
+private struct DialPicker: View {
+    let title: String
+    @Binding var selection: String
+    let options: [String]
+
+    var body: some View {
+        VStack(spacing: 10) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            Picker(title, selection: $selection) {
+                ForEach(options, id: \.self) { option in
+                    Text(option).tag(option)
+                }
             }
-            VStack(alignment: .leading) {
-                Text("DIA").font(.caption2).foregroundStyle(.secondary)
-                TextField("14.2", text: $dia)
-                    .keyboardType(.decimalPad)
-            }
-            VStack(alignment: .leading) {
-                Text("ADD").font(.caption2).foregroundStyle(.secondary)
-                TextField("+0.00", text: $add)
-                    .keyboardType(.decimalPad)
-            }
+            .pickerStyle(.wheel)
+            .frame(width: 96, height: 110)
+            .clipped()
+            .background(.thinMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
         }
-        TextField("Brand / Product name", text: $brand)
+        .frame(width: 96)
+    }
+}
+
+private enum PrescriptionDialOptions {
+    static let sphereValues = ["--"] + formattedValues(from: -12.0, through: 8.0, step: 0.25, format: "%+.2f")
+    static let cylinderValues = ["--"] + formattedValues(from: -6.0, through: 0.0, step: 0.25, format: "%+.2f")
+    static let axisValues = ["--"] + (0...180).map { "\($0)" }
+    static let baseCurveValues = ["--"] + formattedValues(from: 8.0, through: 9.5, step: 0.1, format: "%.1f")
+    static let diameterValues = ["--"] + formattedValues(from: 13.0, through: 15.5, step: 0.1, format: "%.1f")
+    static let addValues = ["--"] + formattedValues(from: 0.75, through: 3.0, step: 0.25, format: "+%.2f")
+
+    private static func formattedValues(from start: Double, through end: Double, step: Double, format: String) -> [String] {
+        var values: [String] = []
+        var current = start
+
+        while current <= end + 0.0001 {
+            values.append(String(format: format, current))
+            current += step
+        }
+
+        return values
     }
 }

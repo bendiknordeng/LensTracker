@@ -5,14 +5,6 @@ struct PrescriptionDetailView: View {
 
     var body: some View {
         List {
-            // Header
-            Section {
-                if prescription.isExpired {
-                    Label("This prescription has expired", systemImage: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.red)
-                }
-            }
-
             // Standard Rx table format that eye doctors use
             Section("Contact Lens Prescription") {
                 // Header row
@@ -104,10 +96,6 @@ struct PrescriptionDetailView: View {
                 }
                 if let clinic = prescription.clinicName, !clinic.isEmpty {
                     LabeledContent("Clinic", value: clinic)
-                }
-                LabeledContent("Prescribed", value: prescription.date.formatted(.dateTime.year().month(.abbreviated).day()))
-                if let exp = prescription.expirationDate {
-                    LabeledContent("Expires", value: exp.formatted(.dateTime.year().month(.abbreviated).day()))
                 }
             }
 

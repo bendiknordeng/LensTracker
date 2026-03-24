@@ -10,10 +10,12 @@ final class LensViewModel {
 
     var selectedLensType: LensType = .monthly
     var customDays: Int = 30
+    private var dataVersion = 0
 
     // MARK: - Active Record
 
     func activeRecord() -> LensRecord? {
+        _ = dataVersion
         guard let context = modelContext else { return nil }
         let descriptor = FetchDescriptor<LensRecord>(
             predicate: #Predicate { $0.isActive },
@@ -23,6 +25,7 @@ final class LensViewModel {
     }
 
     func allRecords() -> [LensRecord] {
+        _ = dataVersion
         guard let context = modelContext else { return [] }
         let descriptor = FetchDescriptor<LensRecord>(
             sortBy: [SortDescriptor(\.startDate, order: .reverse)]
@@ -33,6 +36,10 @@ final class LensViewModel {
     // MARK: - Actions
 
     func startNewPair() {
+        startNewPair(type: selectedLensType)
+    }
+
+    func startNewPair(type: LensType) {
         guard let context = modelContext else { return }
 
         // Deactivate current pair
@@ -41,21 +48,23 @@ final class LensViewModel {
             current.endDate = .now
         }
 
-        let days = selectedLensType == .monthly || selectedLensType == .biweekly || selectedLensType == .daily
-            ? selectedLensType.defaultDays : customDays
+        selectedLensType = type
+        let days = type == .monthly || type == .biweekly || type == .daily
+            ? type.defaultDays : customDays
         let record = LensRecord(
             startDate: .now,
-            lensTypeName: selectedLensType.rawValue,
+            lensTypeName: type.rawValue,
             replacementDays: days,
             isActive: true
         )
         context.insert(record)
         try? context.save()
+        dataVersion += 1
 
         // Update widget & schedule notifications
         syncWidget()
         Task {
-            await NotificationManager.shared.scheduleLensReminder(dueDate: record.dueDate)
+            NotificationManager.shared.scheduleLensReminder(dueDate: record.dueDate)
         }
     }
 
@@ -72,10 +81,11 @@ final class LensViewModel {
         )
         context.insert(record)
         try? context.save()
+        dataVersion += 1
 
         syncWidget()
         Task {
-            await NotificationManager.shared.scheduleLensReminder(dueDate: record.dueDate)
+            NotificationManager.shared.scheduleLensReminder(dueDate: record.dueDate)
         }
     }
 
@@ -83,6 +93,7 @@ final class LensViewModel {
         guard let context = modelContext else { return }
         context.delete(record)
         try? context.save()
+        dataVersion += 1
         syncWidget()
     }
 
@@ -133,6 +144,7 @@ final class LensViewModel {
     // MARK: - Prescriptions
 
     func allPrescriptions() -> [Prescription] {
+        _ = dataVersion
         guard let context = modelContext else { return [] }
         let descriptor = FetchDescriptor<Prescription>(
             sortBy: [SortDescriptor(\.date, order: .reverse)]
@@ -148,12 +160,14 @@ final class LensViewModel {
         guard let context = modelContext else { return }
         context.insert(prescription)
         try? context.save()
+        dataVersion += 1
     }
 
     func deletePrescription(_ prescription: Prescription) {
         guard let context = modelContext else { return }
         context.delete(prescription)
         try? context.save()
+        dataVersion += 1
     }
 
     // MARK: - Widget Sync

@@ -35,5 +35,15 @@ struct ContentView: View {
                 await NotificationManager.shared.requestAuthorization()
             }
         }
+        .onOpenURL { url in
+            guard url.scheme == "lenstracker" else { return }
+
+            switch url.host {
+            case "reset":
+                viewModel.resetTimer()
+            default:
+                break
+            }
+        }
     }
 }

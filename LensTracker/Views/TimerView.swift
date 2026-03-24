@@ -3,7 +3,6 @@ import SwiftUI
 struct TimerView: View {
     @Environment(LensViewModel.self) private var viewModel
     @State private var showNewPairSheet = false
-    @State private var showResetConfirm = false
 
     var body: some View {
         NavigationStack {
@@ -13,7 +12,7 @@ struct TimerView: View {
                         ActiveLensCard(record: active)
 
                         Button {
-                            showResetConfirm = true
+                            viewModel.resetTimer()
                         } label: {
                             Label("Change Lenses", systemImage: "arrow.triangle.2.circlepath")
                                 .font(.headline)
@@ -24,6 +23,9 @@ struct TimerView: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 14))
                         }
                         .padding(.horizontal)
+
+                        DifferentLensTypeActions(currentTypeName: active.lensTypeName)
+                            .padding(.horizontal)
                     } else {
                         NoActiveLensView()
 
@@ -41,22 +43,11 @@ struct TimerView: View {
                         .padding(.horizontal)
                     }
                 }
-                .padding(.top)
             }
             .navigationTitle("LensTracker")
+            .navigationBarTitleDisplayMode(.inline)
             .sheet(isPresented: $showNewPairSheet) {
                 NewPairSheet()
-            }
-            .confirmationDialog("Change Lenses?", isPresented: $showResetConfirm) {
-                Button("Replace with same type") {
-                    viewModel.resetTimer()
-                }
-                Button("Choose new type") {
-                    showNewPairSheet = true
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("Mark current lenses as replaced and start a new timer.")
             }
         }
     }
@@ -163,6 +154,49 @@ private struct NoActiveLensView: View {
                 .padding(.horizontal, 32)
         }
         .padding(.vertical, 40)
+    }
+}
+
+private struct DifferentLensTypeActions: View {
+    @Environment(LensViewModel.self) private var viewModel
+    let currentTypeName: String
+
+    private var alternativeTypes: [LensType] {
+        LensType.allCases.filter { $0.rawValue != currentTypeName }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Start a Different Type")
+                .font(.headline)
+
+            ForEach(alternativeTypes, id: \.self) { type in
+                Button {
+                    viewModel.startNewPair(type: type)
+                } label: {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(type.rawValue)
+                                .font(.headline)
+                            Text("\(type.defaultDays)-day schedule")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer()
+
+                        Image(systemName: "arrow.right.circle.fill")
+                            .font(.title3)
+                            .foregroundStyle(.blue)
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(.ultraThinMaterial)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                }
+                .buttonStyle(.plain)
+            }
+        }
     }
 }
 
