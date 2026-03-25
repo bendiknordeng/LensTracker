@@ -40,19 +40,28 @@ final class LensViewModel {
     }
 
     func startNewPair(type: LensType) {
+        startNewPair(type: type, startDate: .now)
+    }
+
+    func startNewPair(type: LensType, startDate: Date) {
         guard let context = modelContext else { return }
+        let requestedStartDate = Calendar.current.startOfDay(for: min(startDate, .now))
+        let normalizedStartDate: Date
 
         // Deactivate current pair
         if let current = activeRecord() {
+            normalizedStartDate = max(requestedStartDate, current.startDate)
             current.isActive = false
-            current.endDate = .now
+            current.endDate = normalizedStartDate
+        } else {
+            normalizedStartDate = requestedStartDate
         }
 
         selectedLensType = type
         let days = type == .monthly || type == .biweekly || type == .daily
             ? type.defaultDays : customDays
         let record = LensRecord(
-            startDate: .now,
+            startDate: normalizedStartDate,
             lensTypeName: type.rawValue,
             replacementDays: days,
             isActive: true
@@ -69,12 +78,18 @@ final class LensViewModel {
     }
 
     func resetTimer() {
+        resetTimer(startDate: .now)
+    }
+
+    func resetTimer(startDate: Date) {
         guard let context = modelContext, let current = activeRecord() else { return }
+        let requestedStartDate = Calendar.current.startOfDay(for: min(startDate, .now))
+        let normalizedStartDate = max(requestedStartDate, current.startDate)
         current.isActive = false
-        current.endDate = .now
+        current.endDate = normalizedStartDate
 
         let record = LensRecord(
-            startDate: .now,
+            startDate: normalizedStartDate,
             lensTypeName: current.lensTypeName,
             replacementDays: current.replacementDays,
             isActive: true
@@ -92,6 +107,17 @@ final class LensViewModel {
     func deleteRecord(_ record: LensRecord) {
         guard let context = modelContext else { return }
         context.delete(record)
+        try? context.save()
+        dataVersion += 1
+        syncWidget()
+    }
+
+    func resetAllLensHistory() {
+        guard let context = modelContext else { return }
+        let records = allRecords()
+        for record in records {
+            context.delete(record)
+        }
         try? context.save()
         dataVersion += 1
         syncWidget()

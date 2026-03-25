@@ -2,6 +2,7 @@ import SwiftUI
 
 struct StatsView: View {
     @Environment(LensViewModel.self) private var viewModel
+    @State private var showResetConfirmation = false
 
     var body: some View {
         NavigationStack {
@@ -69,6 +70,19 @@ struct StatsView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .lensCardStyle()
                             .padding(.horizontal)
+
+                            Button(role: .destructive) {
+                                showResetConfirmation = true
+                            } label: {
+                                Label("Reset History and Stats", systemImage: "trash")
+                                    .font(.headline)
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
+                                    .background(LensPalette.coral.opacity(0.16))
+                                    .foregroundStyle(LensPalette.coral)
+                                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                            }
+                            .padding(.horizontal)
                         }
                     }
                     .padding(.bottom, 28)
@@ -77,6 +91,18 @@ struct StatsView: View {
             .navigationTitle("Stats")
             .navigationBarTitleDisplayMode(.inline)
             .lensNavigationChrome()
+            .confirmationDialog(
+                "Reset History and Stats",
+                isPresented: $showResetConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Delete Everything", role: .destructive) {
+                    viewModel.resetAllLensHistory()
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("This permanently removes all tracked lens history and resets the stats screen.")
+            }
         }
     }
 }

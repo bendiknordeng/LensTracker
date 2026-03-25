@@ -20,6 +20,13 @@ struct HistoryView: View {
                         List {
                             ForEach(records, id: \.id) { record in
                                 HistoryRow(record: record)
+                                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                        Button(role: .destructive) {
+                                            viewModel.deleteRecord(record)
+                                        } label: {
+                                            Label("Delete", systemImage: "trash")
+                                        }
+                                    }
                             }
                             .onDelete { offsets in
                                 for i in offsets {

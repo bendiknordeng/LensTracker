@@ -2,7 +2,10 @@ import SwiftUI
 
 struct TimerView: View {
     @Environment(LensViewModel.self) private var viewModel
+    @Environment(\.scenePhase) private var scenePhase
     @State private var showNewPairSheet = false
+    @State private var showResetConfirmation = false
+    @State private var showBackdatedResetSheet = false
 
     var body: some View {
         NavigationStack {
@@ -13,9 +16,10 @@ struct TimerView: View {
                     VStack(alignment: .leading, spacing: 24) {
                         if let active = viewModel.activeRecord() {
                             ActiveLensCard(record: active)
+                                .id(active.id)
 
                             Button {
-                                viewModel.resetTimer()
+                                showResetConfirmation = true
                             } label: {
                                 Label("Change Lenses", systemImage: "arrow.triangle.2.circlepath")
                                     .font(.headline)
@@ -67,6 +71,28 @@ struct TimerView: View {
             .sheet(isPresented: $showNewPairSheet) {
                 NewPairSheet()
             }
+            .sheet(isPresented: $showBackdatedResetSheet) {
+                BackdatedResetSheet()
+            }
+            .confirmationDialog(
+                "Confirm Lens Change",
+                isPresented: $showResetConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("I Changed Them Today") {
+                    viewModel.resetTimer()
+                }
+                Button("I Changed Them Earlier") {
+                    showBackdatedResetSheet = true
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("Choose when you actually switched to your current pair.")
+            }
+            .onChange(of: scenePhase) { _, newPhase in
+                guard newPhase == .active else { return }
+                viewModel.syncWidget()
+            }
         }
     }
 }
@@ -94,12 +120,12 @@ private struct ActiveLensCard: View {
 
                 Spacer()
 
-                Text(record.isOverdue ? "Overdue" : "In Rotation")
+                Text(isOverdue ? "Overdue" : "In Rotation")
                     .font(.caption.weight(.semibold))
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
-                    .background(record.isOverdue ? LensPalette.coral.opacity(0.18) : LensPalette.teal.opacity(0.14))
-                    .foregroundStyle(record.isOverdue ? LensPalette.coral : LensPalette.teal)
+                    .background(isOverdue ? LensPalette.coral.opacity(0.18) : LensPalette.teal.opacity(0.14))
+                    .foregroundStyle(isOverdue ? LensPalette.coral : LensPalette.teal)
                     .clipShape(Capsule())
             }
 
@@ -123,24 +149,21 @@ private struct ActiveLensCard: View {
                     .frame(width: 196, height: 196)
 
                 Circle()
-                    .trim(from: 0, to: record.progress)
+                    .trim(from: 0, to: progress)
                     .stroke(
-                        AngularGradient(
-                            colors: [progressColor.opacity(0.45), progressColor, LensPalette.ink],
-                            center: .center
-                        ),
+                        progressColor,
                         style: StrokeStyle(lineWidth: 14, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
                     .frame(width: 196, height: 196)
-                    .animation(.easeInOut, value: record.progress)
+                    .animation(.easeInOut, value: progress)
 
                 VStack(spacing: 6) {
-                    Text("\(record.daysRemaining)")
+                    Text("\(daysRemaining)")
                         .font(.system(size: 58, weight: .bold, design: .rounded))
                         .foregroundStyle(LensPalette.ink)
 
-                    Text(record.daysRemaining == 1 ? "day left" : "days left")
+                    Text(daysRemaining == 1 ? "day left" : "days left")
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(LensPalette.slate)
                 }
@@ -152,7 +175,7 @@ private struct ActiveLensCard: View {
                 InfoPill(title: "Due", value: record.dueDate.formatted(.dateTime.month(.abbreviated).day()), icon: "bell")
             }
 
-            if record.isOverdue {
+            if isOverdue {
                 Label("Overdue — please change your lenses!", systemImage: "exclamationmark.triangle.fill")
                     .font(.callout.weight(.semibold))
                     .foregroundStyle(.white)
@@ -169,9 +192,21 @@ private struct ActiveLensCard: View {
         .onReceive(timer) { _ in now = .now }
     }
 
+    private var daysRemaining: Int {
+        record.daysRemaining(at: now)
+    }
+
+    private var progress: Double {
+        record.progress(at: now)
+    }
+
+    private var isOverdue: Bool {
+        record.isOverdue(at: now)
+    }
+
     var progressColor: Color {
-        if record.isOverdue { return .red }
-        if record.daysRemaining <= 3 { return .orange }
+        if isOverdue { return .red }
+        if daysRemaining <= 3 { return .orange }
         return .blue
     }
 }
@@ -275,6 +310,7 @@ private struct NewPairSheet: View {
     @Environment(LensViewModel.self) private var viewModel
     @Environment(\.dismiss) private var dismiss
     @State private var selectedType: LensType = .monthly
+    @State private var startDate = Calendar.current.startOfDay(for: .now)
 
     var body: some View {
         NavigationStack {
@@ -297,10 +333,18 @@ private struct NewPairSheet: View {
                     }
                 }
 
+                Section("Started Wearing") {
+                    DatePicker(
+                        "Switch date",
+                        selection: $startDate,
+                        in: ...Date.now,
+                        displayedComponents: .date
+                    )
+                }
+
                 Section {
                     Button("Start Tracking") {
-                        viewModel.selectedLensType = selectedType
-                        viewModel.startNewPair()
+                        viewModel.startNewPair(type: selectedType, startDate: startDate)
                         dismiss()
                     }
                     .font(.headline)
@@ -308,6 +352,44 @@ private struct NewPairSheet: View {
                 }
             }
             .navigationTitle("New Lenses")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium])
+    }
+}
+
+private struct BackdatedResetSheet: View {
+    @Environment(LensViewModel.self) private var viewModel
+    @Environment(\.dismiss) private var dismiss
+    @State private var switchDate = Calendar.current.startOfDay(for: .now)
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("When did you switch lenses?") {
+                    DatePicker(
+                        "Switch date",
+                        selection: $switchDate,
+                        in: ...Date.now,
+                        displayedComponents: .date
+                    )
+                }
+
+                Section {
+                    Button("Update Tracker") {
+                        viewModel.resetTimer(startDate: switchDate)
+                        dismiss()
+                    }
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                }
+            }
+            .navigationTitle("Backdate Reset")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
